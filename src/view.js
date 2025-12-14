@@ -6,7 +6,7 @@
  */
 
 document.addEventListener( 'DOMContentLoaded', function() {
-	const statBlocks = document.querySelectorAll( '.wp-block-telex-gatherpress-statistics' );
+	const statBlocks = document.querySelectorAll( '.wp-block-gatherpress-statistics' );
 
 	statBlocks.forEach( function( block ) {
 		const numberElement = block.querySelector( '.gatherpress-stats-number' );

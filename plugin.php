@@ -207,6 +207,64 @@ function get_cache_key( string $statistic_type, array $filters = array() ): stri
 }
 
 /**
+ * Get cache expiration time in seconds.
+ *
+ * Returns the number of seconds to cache statistics. Default is 12 hours (43200 seconds).
+ * Developers can modify this using the 'gatherpress_statistics_cache_expiration' filter.
+ *
+ * Example usage to set cache to 6 hours:
+ *
+ * ```php
+ * add_filter( 'gatherpress_statistics_cache_expiration', function( $expiration ) {
+ *     return 6 * HOUR_IN_SECONDS; // 6 hours
+ * } );
+ * ```
+ *
+ * Example usage to set cache to 1 hour:
+ *
+ * ```php
+ * add_filter( 'gatherpress_statistics_cache_expiration', function( $expiration ) {
+ *     return HOUR_IN_SECONDS; // 1 hour
+ * } );
+ * ```
+ *
+ * Example usage to set cache to 24 hours:
+ *
+ * ```php
+ * add_filter( 'gatherpress_statistics_cache_expiration', function( $expiration ) {
+ *     return DAY_IN_SECONDS; // 24 hours
+ * } );
+ * ```
+ *
+ * @since 0.1.0
+ *
+ * @return int Cache expiration time in seconds.
+ */
+function get_cache_expiration(): int {
+	/**
+	 * Filter the cache expiration time for statistics.
+	 *
+	 * This filter allows developers to modify how long statistics are cached
+	 * before they need to be recalculated. The default is 12 hours.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $expiration Cache expiration time in seconds. Default 12 hours (43200).
+	 */
+	$expiration = apply_filters(
+		'gatherpress_statistics_cache_expiration',
+		12 * HOUR_IN_SECONDS
+	);
+	
+	// Ensure the value is a positive integer
+	if ( ! is_numeric( $expiration ) || $expiration < 1 ) {
+		$expiration = 12 * HOUR_IN_SECONDS;
+	}
+	
+	return absint( $expiration );
+}
+
+/**
  * Calculate statistics based on type and filters.
  *
  * This is the main calculation dispatcher that routes to specific calculation
@@ -281,8 +339,66 @@ function calculate( string $statistic_type, array $filters = array() ): int {
 	// Ensure result is always a non-negative integer
 	$result = is_numeric( $result ) ? absint( $result ) : 0;
 	
-	// Allow developers to filter the calculated result
-	return \apply_filters( 'gatherpress_stats_calculate_' . $statistic_type, $result, $filters );
+	/**
+	 * Filter calculated statistics before caching.
+	 *
+	 * This filter allows developers to modify calculated statistics before they
+	 * are cached. Different filters are available for each statistic type:
+	 *
+	 * - gatherpress_stats_calculate_total_events
+	 * - gatherpress_stats_calculate_events_per_taxonomy
+	 * - gatherpress_stats_calculate_events_multi_taxonomy
+	 * - gatherpress_stats_calculate_total_taxonomy_terms
+	 * - gatherpress_stats_calculate_taxonomy_terms_by_taxonomy
+	 * - gatherpress_stats_calculate_total_attendees
+	 *
+	 * Example usage to round count values:
+	 *
+	 * ```php
+	 * // Round counts to nearest 10 when over 50
+	 * add_filter( 'gatherpress_stats_calculate_total_events', function( $count, $filters ) {
+	 *     if ( $count > 50 ) {
+	 *         return round( $count / 10 ) * 10;
+	 *     }
+	 *     return $count;
+	 * }, 10, 2 );
+	 * ```
+	 *
+	 * Example usage to round based on value ranges:
+	 *
+	 * ```php
+	 * add_filter( 'gatherpress_stats_calculate_total_attendees', function( $count, $filters ) {
+	 *     // Round to nearest 5 if between 10-50
+	 *     if ( $count >= 10 && $count <= 50 ) {
+	 *         return round( $count / 5 ) * 5;
+	 *     }
+	 *     // Round to nearest 10 if between 50-100
+	 *     if ( $count > 50 && $count <= 100 ) {
+	 *         return round( $count / 10 ) * 10;
+	 *     }
+	 *     // Round to nearest 50 if over 100
+	 *     if ( $count > 100 ) {
+	 *         return round( $count / 50 ) * 50;
+	 *     }
+	 *     return $count;
+	 * }, 10, 2 );
+	 * ```
+	 *
+	 * Example usage to add a custom multiplier:
+	 *
+	 * ```php
+	 * // Apply a 1.5x multiplier to all event counts
+	 * add_filter( 'gatherpress_stats_calculate_total_events', function( $count, $filters ) {
+	 *     return round( $count * 1.5 );
+	 * }, 10, 2 );
+	 * ```
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int   $count   The calculated statistic value.
+	 * @param array $filters The filters applied to this statistic.
+	 */
+	return apply_filters( 'gatherpress_stats_calculate_' . $statistic_type, $result, $filters );
 }
 
 /**
@@ -321,7 +437,7 @@ function calculate( string $statistic_type, array $filters = array() ): int {
  */
 function count_events( array $filters = array() ): int {
 	// Ensure the post type exists
-	if ( ! \post_type_exists( 'gatherpress_event' ) ) {
+	if ( ! is_gatherpress_active() ) {
 		return 0;
 	}
 	
@@ -464,7 +580,7 @@ function count_terms( array $filters = array() ): int {
  */
 function terms_by_taxonomy( array $filters = array() ): int {
 	// Ensure the post type exists
-	if ( ! \post_type_exists( 'gatherpress_event' ) ) {
+	if ( ! is_gatherpress_active() ) {
 		return 0;
 	}
 	
@@ -571,7 +687,7 @@ function terms_by_taxonomy( array $filters = array() ): int {
  */
 function count_attendees( array $filters = array() ): int {
 	// Ensure the post type exists
-	if ( ! \post_type_exists( 'gatherpress_event' ) ) {
+	if ( ! is_gatherpress_active() ) {
 		return 0;
 	}
 	
@@ -657,11 +773,11 @@ function count_attendees( array $filters = array() ): int {
  * 1. Check if cached value exists (transient)
  * 2. If yes, return cached value
  * 3. If no, calculate value
- * 4. Store in cache for 12 hours
+ * 4. Store in cache for configured duration (default 12 hours)
  * 5. Return calculated value
  *
  * The cache is automatically invalidated when:
- * - Events are created, updated, or deleted
+ * - Event post status changes to/from 'publish'
  * - Taxonomy terms are modified
  * - Post meta (attendee counts) changes
  *
@@ -703,9 +819,9 @@ function get_cached( string $statistic_type, array $filters = array() ): int {
 	// Ensure value is integer
 	$value = is_numeric( $value ) ? absint( $value ) : 0;
 	
-	// Store in cache for 12 hours
-	// Note: Cache is cleared automatically on data changes
-	\set_transient( $cache_key, $value, 12 * HOUR_IN_SECONDS );
+	// Store in cache with configured expiration time
+	$expiration = get_cache_expiration();
+	\set_transient( $cache_key, $value, $expiration );
 	
 	return $value;
 }
@@ -908,6 +1024,9 @@ function pregenerate_cache(): void {
 		return;
 	}
 	
+	// Get configured cache expiration time
+	$expiration = get_cache_expiration();
+	
 	// Loop through each configuration and pre-generate
 	foreach ( $configs as $config ) {
 		// Validate configuration has required keys
@@ -930,8 +1049,8 @@ function pregenerate_cache(): void {
 		// Ensure value is a non-negative integer
 		$value = is_numeric( $value ) ? absint( $value ) : 0;
 		
-		// Store in cache for 12 hours
-		\set_transient( $cache_key, $value, 12 * HOUR_IN_SECONDS );
+		// Store in cache with configured expiration time
+		\set_transient( $cache_key, $value, $expiration );
 	}
 }
 
@@ -1040,10 +1159,10 @@ function clear_cache_on_status_change( string $new_status, string $old_status, $
 \add_action( 'transition_post_status', __NAMESPACE__ . '\clear_cache_on_status_change', 10, 3 );
 
 /**
- * Clear cache when attendee count post meta is updated.
+ * Clear cache when attendee count post meta is updated or added.
  *
- * Hooked to post meta update actions. Clears all statistics caches when the
- * 'gatherpress_attendees_count' meta field is added, updated, or deleted.
+ * Hooked to post meta update and add actions. Clears all statistics caches when the
+ * 'gatherpress_attendees_count' meta field is added or updated.
  * The actual regeneration happens 60 seconds later via cron.
  *
  * @since 0.1.0
@@ -1061,7 +1180,29 @@ function clear_cache_on_meta_update( int $meta_id, int $post_id, string $meta_ke
 }
 \add_action( 'updated_post_meta', __NAMESPACE__ . '\clear_cache_on_meta_update', 10, 3 );
 \add_action( 'added_post_meta', __NAMESPACE__ . '\clear_cache_on_meta_update', 10, 3 );
-\add_action( 'deleted_post_meta', __NAMESPACE__ . '\clear_cache_on_meta_update', 10, 3 );
+
+/**
+ * Clear cache when attendee count post meta is deleted.
+ *
+ * Hooked to post meta delete action. Note that 'deleted_post_meta' passes
+ * an array of meta IDs as the first parameter (unlike updated/added which pass a single ID).
+ * Clears all statistics caches when the 'gatherpress_attendees_count' meta field is deleted.
+ * The actual regeneration happens 60 seconds later via cron.
+ *
+ * @since 0.1.0
+ *
+ * @param array<int, int> $meta_ids  Array of deleted metadata entry IDs.
+ * @param int             $post_id   Post ID.
+ * @param string          $meta_key  Meta key that was deleted.
+ * @return void
+ */
+function clear_cache_on_meta_delete( array $meta_ids, int $post_id, string $meta_key ): void {
+	// Only proceed if this is the attendees count meta for a GatherPress event
+	if ( 'gatherpress_attendees_count' === $meta_key && 'gatherpress_event' === \get_post_type( $post_id ) ) {
+		clear_cache();
+	}
+}
+\add_action( 'deleted_post_meta', __NAMESPACE__ . '\clear_cache_on_meta_delete', 10, 3 );
 
 /**
  * Clear cache when GatherPress taxonomy terms are modified.
