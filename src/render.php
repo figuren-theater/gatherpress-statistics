@@ -87,21 +87,21 @@ $display_suffix  = ( $use_conditional && ! empty( $suffix_conditional ) ) ? $suf
 $display_label = ( 1 === $count ) ? $label_singular : $label_plural;
 
 ?>
-<div <?php echo get_block_wrapper_attributes(); ?>>
-	<div class="gatherpress-stats-number">
+<figure <?php echo get_block_wrapper_attributes(); ?>>
+	<data class="gatherpress-stats-value" value="<?php echo esc_attr( $count ); ?>">
 		<?php 
 		if ( ! empty( $display_prefix ) ) {
-			echo esc_html( $display_prefix ) . ' ';
+			?><span class="gatherpress-stats-prefix"><?php echo esc_html( $display_prefix ); ?></span> <?php
 		}
-		echo esc_html( number_format_i18n( $count ) );
+		?><span class="gatherpress-stats-number"><?php echo esc_html( number_format_i18n( $count ) ); ?></span><?php
 		if ( ! empty( $display_suffix ) ) {
-			echo ' ' . esc_html( $display_suffix );
+			?> <span class="gatherpress-stats-suffix"><?php echo esc_html( $display_suffix ); ?></span><?php
 		}
 		?>
-	</div>
+	</data>
 	<?php if ( $show_label && ! empty( $display_label ) ) : ?>
-		<div class="gatherpress-stats-label">
+		<figcaption class="gatherpress-stats-label">
 			<?php echo esc_html( $display_label ); ?>
-		</div>
+		</figcaption>
 	<?php endif; ?>
-</div>
+</figure>

@@ -10,7 +10,7 @@ Display dynamically calculated statistics about your GatherPress events with bea
 
 ## Description
 
-The GatherPress Statistics block is a powerful analytics tool designed for GatherPress event management. It provides statistics about your GatherPress events, venues, and topics with intelligent caching for optimal performance and a modular architecture that lets you control exactly which statistics are available.
+The GatherPress Statistics block is a powerful tool  to provide statistics about your GatherPress events, venues, and topics with intelligent caching for optimal performance and a modular architecture that lets you control exactly which statistics are available.
 
 ### Key Features:
 
@@ -22,6 +22,7 @@ The GatherPress Statistics block is a powerful analytics tool designed for Gathe
 * **Theme.json Integration:** Fully compatible with theme.json spacing, typography, and color settings
 * **Conditional Formatting:** Show different prefix/suffix based on count thresholds
 * **Event Time Filtering:** Separate statistics for upcoming and past events
+* **Semantic HTML:** Uses proper HTML5 elements (`<figure>`, `<data>`, `<figcaption>`) for better accessibility
 
 ### Perfect For:
 
@@ -43,9 +44,9 @@ When you save an event, update attendee counts, or modify taxonomy terms, the pl
 4. Stores results as WordPress transients (default 12-hour expiration, customizable via filter)
 5. Frontend blocks retrieve cached values (0.001 seconds)
 
-## Installation
+== Installation ==
 
-1. Upload the plugin files to the `/wp-content/plugins/gatherpress-statistics` directory, ~~or install the plugin through the WordPress plugins screen directly.~~
+1. Upload the plugin files to the `/wp-content/plugins/gatherpress-statistics` directory
 2. Activate the plugin through the 'Plugins' screen in WordPress
 3. Ensure GatherPress plugin is installed and activated
 4. Add the "GatherPress Statistics" block to any post or page
@@ -84,6 +85,10 @@ The block automatically detects and works with any taxonomies registered to the 
 ### Can I show statistics for all events (upcoming and past combined)?
 
 No. The plugin requires you to choose either upcoming or past events. This is by design to ensure accurate and meaningful statistics.
+
+### How do I style the number and label differently?
+
+See the "Styling with theme.json" section below for detailed examples of targeting specific elements.
 
 ## Screenshots
 
@@ -149,7 +154,233 @@ Customize the display based on count thresholds:
 - **Minimal**: Compact display with smaller text
 - **Confetti**: Gradient background with hover animation
 
-## Developer Documentation
+== Styling with theme.json ==
+
+### HTML Structure
+
+The block uses semantic HTML for better accessibility and styling:
+
+```html
+<figure class="wp-block-gatherpress-statistics">
+  <data class="gatherpress-stats-value" value="42">
+    <span class="gatherpress-stats-prefix">Over</span>
+    <span class="gatherpress-stats-number">42</span>
+    <span class="gatherpress-stats-suffix">and counting</span>
+  </data>
+  <figcaption class="gatherpress-stats-label">Events</figcaption>
+</figure>
+```
+
+### Key Elements:
+
+- **`<figure>`**: Container with block classes and styles
+- **`<data>`**: Holds the numeric value with machine-readable `value` attribute
+- **`<span class="gatherpress-stats-number">`**: The actual statistic number
+- **`<span class="gatherpress-stats-prefix">`**: Optional prefix text (e.g., "Over", "+")
+- **`<span class="gatherpress-stats-suffix">`**: Optional suffix text (e.g., "total", "and counting")
+- **`<figcaption>`**: The descriptive label
+
+### Styling the Number Separately
+
+Target the `.gatherpress-stats-number` class to style just the number:
+
+```json
+{
+  "version": 2,
+  "styles": {
+    "blocks": {
+      "gatherpress/statistics": {
+        "elements": {
+          ".gatherpress-stats-number": {
+            "typography": {
+              "fontSize": "4rem",
+              "fontWeight": "900",
+              "lineHeight": "1"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--primary)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Styling the Label Separately
+
+Target the `.gatherpress-stats-label` class:
+
+```json
+{
+  "version": 2,
+  "styles": {
+    "blocks": {
+      "gatherpress/statistics": {
+        "elements": {
+          ".gatherpress-stats-label": {
+            "typography": {
+              "fontSize": "0.875rem",
+              "fontWeight": "600",
+              "textTransform": "uppercase",
+              "letterSpacing": "0.05em"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--contrast)"
+            },
+            "spacing": {
+              "margin": {
+                "top": "0.5rem"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Styling Prefix and Suffix
+
+```json
+{
+  "version": 2,
+  "styles": {
+    "blocks": {
+      "gatherpress/statistics": {
+        "elements": {
+          ".gatherpress-stats-prefix, .gatherpress-stats-suffix": {
+            "typography": {
+              "fontSize": "0.75em",
+              "fontWeight": "600"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--secondary)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Complete Styling Example
+
+```json
+{
+  "version": 2,
+  "styles": {
+    "blocks": {
+      "gatherpress/statistics": {
+        "spacing": {
+          "padding": "2rem"
+        },
+        "border": {
+          "radius": "8px"
+        },
+        "color": {
+          "background": "var(--wp--preset--color--base)",
+          "text": "var(--wp--preset--color--contrast)"
+        },
+        "elements": {
+          ".gatherpress-stats-value": {
+            "spacing": {
+              "margin": {
+                "bottom": "1rem"
+              }
+            }
+          },
+          ".gatherpress-stats-number": {
+            "typography": {
+              "fontSize": "clamp(3rem, 8vw, 5rem)",
+              "fontWeight": "900",
+              "lineHeight": "1"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--primary)"
+            }
+          },
+          ".gatherpress-stats-prefix, .gatherpress-stats-suffix": {
+            "typography": {
+              "fontSize": "1rem",
+              "fontWeight": "600"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--secondary)"
+            }
+          },
+          ".gatherpress-stats-label": {
+            "typography": {
+              "fontSize": "1.25rem",
+              "fontWeight": "500",
+              "textTransform": "uppercase",
+              "letterSpacing": "0.1em"
+            },
+            "color": {
+              "text": "var(--wp--preset--color--contrast)"
+            }
+          }
+        },
+        "variations": {
+          "card": {
+            "shadow": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+            "elements": {
+              ".gatherpress-stats-number": {
+                "typography": {
+                  "fontSize": "4.5rem"
+                }
+              }
+            }
+          },
+          "minimal": {
+            "spacing": {
+              "padding": "1rem"
+            },
+            "elements": {
+              ".gatherpress-stats-number": {
+                "typography": {
+                  "fontSize": "2rem"
+                }
+              },
+              ".gatherpress-stats-label": {
+                "typography": {
+                  "fontSize": "0.875rem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Responsive Typography
+
+Use `clamp()` for fluid typography:
+
+```json
+{
+  "elements": {
+    ".gatherpress-stats-number": {
+      "typography": {
+        "fontSize": "clamp(2.5rem, 6vw + 1rem, 5rem)"
+      }
+    },
+    ".gatherpress-stats-label": {
+      "typography": {
+        "fontSize": "clamp(0.875rem, 2vw + 0.5rem, 1.25rem)"
+      }
+    }
+  }
+}
+```
+
+== Developer Documentation ==
 
 ### Architecture Overview:
 
@@ -184,8 +415,7 @@ Cached Statistics Examples:
 // Total counts by event query
 get_transient( 'gatherpress_stats_total_events_upcoming_abc123' ); // Returns: 8
 get_transient( 'gatherpress_stats_total_events_past_def456' );     // Returns: 7
-get_transient( 'gatherpress_stats_total_attendees_upcoming_ghi789' ); // Returns: 185
-get_transient( 'gatherpress_stats_total_attendees_past_jkl012' );     // Returns: 195
+get_transient( 'gatherpress_stats_total_attendees_past_jkl012' );  // Returns: 195
 
 // Per taxonomy
 get_transient( 'gatherpress_stats_total_taxonomy_terms_mno345' ); // 3 topics
@@ -194,7 +424,6 @@ get_transient( 'gatherpress_stats_total_taxonomy_terms_pqr678' ); // 3 venues
 // Per term with event query
 get_transient( 'gatherpress_stats_events_per_taxonomy_upcoming_stu901' ); // 4 (upcoming Technology events)
 get_transient( 'gatherpress_stats_events_per_taxonomy_past_vwx234' );    // 3 (past Technology events)
-get_transient( 'gatherpress_stats_total_attendees_upcoming_yza567' );    // 100 (upcoming Technology attendees)
 get_transient( 'gatherpress_stats_total_attendees_past_bcd890' );        // 100 (past Technology attendees)
 
 // Cross-taxonomy
@@ -425,6 +654,7 @@ The plugin uses a smart cache invalidation system that balances freshness with p
 * Attendee count statistics
 * Conditional prefix/suffix formatting
 * Comprehensive documentation and developer hooks
+* Semantic HTML structure with `<figure>`, `<data>`, and `<figcaption>` elements
 
 
 ## Privacy & Data

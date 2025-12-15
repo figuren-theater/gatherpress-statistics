@@ -580,17 +580,19 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			<div { ...useBlockProps() }>
 				{ ! isLoadingTypes && ! isCurrentTypeSupported ? (
 					<div className="gatherpress-stats-preview" style={{ opacity: 0.5 }}>
-						<div className="gatherpress-stats-number">⚠️</div>
+						<div className="gatherpress-stats-value">⚠️</div>
 						<div className="gatherpress-stats-label">
 							{ __( 'Statistic type disabled', 'gatherpress-statistics' ) }
 						</div>
 					</div>
 				) : (
 					<div className="gatherpress-stats-preview">
-						<div className="gatherpress-stats-number">
-							{ displayPrefix && displayPrefix + ' ' }
-							{ previewCount }
-							{ displaySuffix && ' ' + displaySuffix }
+						<div className="gatherpress-stats-value">
+							{ displayPrefix && <span className="gatherpress-stats-prefix">{ displayPrefix }</span> }
+							{ displayPrefix && ' ' }
+							<span className="gatherpress-stats-number">{ previewCount }</span>
+							{ displaySuffix && ' ' }
+							{ displaySuffix && <span className="gatherpress-stats-suffix">{ displaySuffix }</span> }
 						</div>
 						{ showLabel && (
 							<div className="gatherpress-stats-label">{ displayLabel }</div>
