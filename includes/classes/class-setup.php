@@ -228,7 +228,7 @@ class Setup {
         if ( 'publish' === $new_status || 'publish' === $old_status ) {
             // Only clear if status actually changed
             if ( $new_status !== $old_status ) {
-                clear_cache();
+                $this->clear_cache();
             }
         }
 	}
