@@ -23,8 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Register post type support for gatherpress_statistics with granular control.
  *
  * This function adds the 'gatherpress_statistics' support to the 'gatherpress_event'
- * post type by default with all statistic types enabled. Developers can modify
- * this configuration to enable/disable specific statistic types.
+ * post type by default with some statistic types enabled. Developers can modify
+ * this configuration to enable/disable specific or all statistic types.
  *
  * Example to disable specific statistic types:
  *
@@ -180,6 +180,24 @@ function get_supported_post_types(): array {
 function has_supported_post_types(): bool {
 	$post_types = get_supported_post_types();
 	return ! empty( $post_types );
+}
+
+/**
+ * Check if a specific post is supported for statistics.
+ *
+ * A post is considered supported if its post type supports
+ * 'gatherpress_statistics' and its status is 'publish'.
+ *
+ * @since 0.1.0
+ *
+ * @param int $post_id Post ID to check.
+ * @return bool True if supported, false otherwise.
+ */
+function is_supported_post( int $post_id ) : bool {
+	$post = get_post( $post_id );
+	
+	return post_type_supports( $post->post_type, 'gatherpress_statistics' ) 
+		&& $post->post_status === 'publish';
 }
 
 /**
@@ -1384,10 +1402,8 @@ add_action( 'transition_post_status', __NAMESPACE__ . '\clear_cache_on_status_ch
  * @return void
  */
 function clear_cache_on_meta_update( int $meta_id, int $post_id, string $meta_key ): void {
-	$post_type = get_post_type( $post_id );
-	
-	// Only proceed if this is the attendees count meta for a supported post type
-	if ( 'gatherpress_attendees_count' === $meta_key && post_type_supports( $post_type, 'gatherpress_statistics' ) ) {
+	// Only proceed if this is the attendees count meta for a supported post
+	if ( 'gatherpress_attendees_count' === $meta_key && is_supported_post( $post_id ) ) {
 		clear_cache();
 	}
 }
@@ -1408,10 +1424,8 @@ add_action( 'added_post_meta', __NAMESPACE__ . '\clear_cache_on_meta_update', 10
  * @return void
  */
 function clear_cache_on_meta_delete( $meta_ids, int $post_id, string $meta_key ): void {
-	$post_type = get_post_type( $post_id );
-	
-	// Only proceed if this is the attendees count meta for a supported post type
-	if ( 'gatherpress_attendees_count' === $meta_key && post_type_supports( $post_type, 'gatherpress_statistics' ) ) {
+	// Only proceed if this is the attendees count meta for a supported post
+	if ( 'gatherpress_attendees_count' === $meta_key && is_supported_post( $post_id ) ) {
 		clear_cache();
 	}
 }
@@ -1474,10 +1488,8 @@ add_action( 'delete_term', __NAMESPACE__ . '\clear_cache_on_term_change', 10, 3 
  * @return void
  */
 function clear_cache_on_term_relationship( int $object_id, array $terms, array $tt_ids ): void {
-	$post_type = get_post_type( $object_id );
-	
-	// Only proceed if terms were assigned to a supported post type
-	if ( post_type_supports( $post_type, 'gatherpress_statistics' ) ) {
+	// Only proceed if terms were assigned to a supported post
+	if ( is_supported_post( $object_id ) ) {
 		clear_cache();
 	}
 }
